@@ -13,7 +13,7 @@ from charms/companions that is delivered with the "Generic" attack type can be
 enabled in settings (`CountGenericDamage`).
 
 Note: damage that bypasses `HealthManager.TakeDamage` (most notably individual
-Flukenest projectiles) is not counted in this first version.
+Flukenest projectiles) is handled separately so Flukenest damage is included.
 
 ## Install
 
@@ -22,12 +22,42 @@ Flukenest projectiles) is not counted in this first version.
    `Hollow Knight/hollow_knight.app/Contents/Resources/Data/Managed/Mods/`
 3. Launch the game; the counter appears when you enter a gameplay scene.
 
+## Controls
+
+- `F6` (default) toggles the HUD on/off while playing. The key can be changed
+  in the in-game menu or in the settings JSON.
+- `F7` (default) resets the peak DPS value shown under the main reading.
+
+## HUD
+
+The counter shows two lines:
+
+- `DPS x.xx` - rolling average damage per second.
+- `Max x.xx` - the highest rolling DPS reached since the last manual reset or
+  since returning to the main menu.
+
+Both values are formatted to two decimal places.
+
+## Pause menu
+
+Open the pause menu -> Mods -> DPS Counter. Available options:
+
+- Mod on/off toggle (unloads the mod).
+- Show HUD (what the hotkey changes).
+- Toggle key (None / F5-F9 / Keypad0-9).
+- Reset Max key (None / F5-F9 / Keypad0-9).
+- Counting window (1s / 2s / 3s / 5s / 10s).
+- Count Generic damage (some charms/companions).
+- HUD corner (Top-Right / Top-Left / Bottom-Right / Bottom-Left).
+
 ## Settings
 
 After the first run, `DpsCounter.GlobalSettings.json` is created next to the
 game's saves. Edit it while the game is closed to change:
 
 - `Enabled` - show/hide the HUD.
+- `ToggleKey` - key used while playing to toggle the HUD.
+- `ResetMaxKey` - key used while playing to reset the peak DPS.
 - `WindowSeconds` - rolling window used for the DPS average (default 3).
 - `CountGenericDamage` - also count Generic attack-type damage.
 - `FontSize` - HUD text size.

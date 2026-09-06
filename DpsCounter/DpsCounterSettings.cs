@@ -10,6 +10,18 @@ namespace DpsCounterMod
         public bool Enabled { get; set; } = true;
 
         /// <summary>
+        /// Key used to toggle the HUD while playing. Set to "None" to disable.
+        /// Any UnityEngine.KeyCode name is accepted in the JSON file.
+        /// </summary>
+        public string ToggleKey { get; set; } = "F6";
+
+        /// <summary>
+        /// Key pressed during gameplay to reset the peak DPS value shown under
+        /// the main reading. Set to "None" to disable.
+        /// </summary>
+        public string ResetMaxKey { get; set; } = "F7";
+
+        /// <summary>
         /// Length of the rolling window (in seconds) used to compute DPS.
         /// </summary>
         public float WindowSeconds { get; set; } = 3f;
