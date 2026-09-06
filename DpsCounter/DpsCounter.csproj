@@ -1,0 +1,66 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+    <RootNamespace>DpsCounterMod</RootNamespace>
+    <AssemblyName>DpsCounter</AssemblyName>
+    <Product>DPS Counter</Product>
+    <Description>Hollow Knight mod that shows the player's damage per second on screen.</Description>
+    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <FileVersion>0.1.0.0</FileVersion>
+    <Version>0.1.0</Version>
+    <DebugType>portable</DebugType>
+  </PropertyGroup>
+
+  <!--
+    Locate the game's Managed folder automatically for common install paths.
+    If your game lives somewhere else, build with:
+      dotnet build -c Release -p:HollowKnightManaged="/absolute/path/to/Managed"
+  -->
+  <PropertyGroup>
+    <HollowKnightManaged Condition="'$(HollowKnightManaged)' == '' and Exists('$(HOME)/Library/Application Support/Steam/steamapps/common/Hollow Knight/hollow_knight.app/Contents/Resources/Data/Managed')">$(HOME)/Library/Application Support/Steam/steamapps/common/Hollow Knight/hollow_knight.app/Contents/Resources/Data/Managed</HollowKnightManaged>
+    <HollowKnightManaged Condition="'$(HollowKnightManaged)' == '' and Exists('$(HOME)/Library/Application Support/GOG.com/Galaxy Games/Hollow Knight/hollow_knight.app/Contents/Resources/Data/Managed')">$(HOME)/Library/Application Support/GOG.com/Galaxy Games/Hollow Knight/hollow_knight.app/Contents/Resources/Data/Managed</HollowKnightManaged>
+    <HollowKnightManaged Condition="'$(HollowKnightManaged)' == '' and Exists('$(HOME)/.local/share/Steam/steamapps/common/Hollow Knight/hollow_knight_Data/Managed')">$(HOME)/.local/share/Steam/steamapps/common/Hollow Knight/hollow_knight_Data/Managed</HollowKnightManaged>
+    <HollowKnightManaged Condition="'$(HollowKnightManaged)' == '' and Exists('C:/Program Files (x86)/Steam/steamapps/common/Hollow Knight/hollow_knight_Data/Managed')">C:/Program Files (x86)/Steam/steamapps/common/Hollow Knight/hollow_knight_Data/Managed</HollowKnightManaged>
+    <HollowKnightManaged Condition="'$(HollowKnightManaged)' == '' and Exists('D:/SteamLibrary/steamapps/common/Hollow Knight/hollow_knight_Data/Managed')">D:/SteamLibrary/steamapps/common/Hollow Knight/hollow_knight_Data/Managed</HollowKnightManaged>
+  </PropertyGroup>
+
+  <Target Name="CheckHollowKnightManaged" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(HollowKnightManaged)')" Text="Hollow Knight Managed folder was not found. Build with: -p:HollowKnightManaged=&quot;/absolute/path/to/Managed&quot;" />
+  </Target>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(HollowKnightManaged)/Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="MMHOOK_Assembly-CSharp">
+      <HintPath>$(HollowKnightManaged)/MMHOOK_Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(HollowKnightManaged)/UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(HollowKnightManaged)/UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>$(HollowKnightManaged)/UnityEngine.UIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>$(HollowKnightManaged)/UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(HollowKnightManaged)/UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+</Project>
