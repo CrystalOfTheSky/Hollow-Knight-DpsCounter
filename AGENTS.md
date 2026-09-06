@@ -67,9 +67,13 @@ Ask the tester for these files when debugging.
   - `On.ExtraDamageable.ApplyExtraDamageToHealthManager` handles Spore Shroom
     and Defender's Crest extra-damage ticks, which bypass the standard damage
     pipeline.
-  - Generic damage is attributed to player charms via a HeroController parent
-    check or known charm object names; `CountGenericDamage` opts into all
-    Generic damage as a fallback.
+  - Generic damage with a real source object is treated as player damage;
+    source-null Generic kills (e.g. `EnemyKillEventListener`) are excluded.
+    `CountGenericDamage` opts into all Generic damage as a fallback.
+  - Dreamshield, Weaversong and Grimmchild deal damage through the custom
+    `SetHP` FSM action, which overwrites `HealthManager.hp` directly. The mod
+    hooks `On.SetHP`, recognizes charm-owned FSM objects, and counts the HP
+    difference (multi-target rules still apply).
 - DPS is a rolling window (default 3 s): samples are `(Time.time, damage)`,
   old samples are pruned every frame, and
   `DPS = damage in window / window length`.
@@ -94,6 +98,9 @@ Ask the tester for these files when debugging.
   Spore Shroom/Defender's Crest now count, while Grimmchild, Weaversong and
   Dreamshield still do not; v0.3.2 attributes Generic hits before the source
   object can be destroyed and adds `DebugLogDamage` diagnostics.
+- v0.3.2 is verified by the user: Spore Shroom, Defender's Crest, Grimmchild
+  (all levels), Weaversong and Dreamshield now count correctly, and the
+  multi-target mode behaves as expected.
 
 ## Release workflow
 

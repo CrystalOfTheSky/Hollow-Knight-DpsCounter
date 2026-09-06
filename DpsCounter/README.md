@@ -6,8 +6,10 @@ A Hollow Knight mod that shows the player's damage per second on screen.
 
 The mod hooks `HealthManager.TakeDamage` (the standard damage pipeline),
 `ExtraDamageable.ApplyExtraDamageToHealthManager` (Spore/Dung charm ticks) and
-`SpellFluke.DoDamage` (Flukenest), then keeps a rolling window of recent player
-damage. Every frame it draws `DPS <value>` at the configured screen position.
+`SpellFluke.DoDamage` (Flukenest). Dreamshield, Weaversong and Grimmchild
+damage is captured through the custom `SetHP` FSM action they use. The mod then
+keeps a rolling window of recent player damage. Every frame it draws
+`DPS <value>` at the configured screen position.
 
 By default, Nail, NailBeam, Spell and SharpShadow damage is counted. Damage
 from player charms (Grimmchild, Weaversong, Dreamshield, Spore Shroom,
