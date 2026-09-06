@@ -9,7 +9,7 @@ A Hollow Knight mod that shows the player's rolling damage per second on screen,
 plus a peak-DPS line. Source of truth lives in this Git repo and on GitHub:
 
 - GitHub: `CrystalOfTheSky/Hollow-Knight-DpsCounter`
-- Current released version: `v0.3.0`
+- Current released version: `v0.3.1`
 
 ## Compatibility (important)
 
@@ -64,9 +64,17 @@ Ask the tester for these files when debugging.
   - `On.SpellFluke.DoDamage` handles Flukenest, which bypasses
     `HealthManager.TakeDamage`; the hook counts only the outermost call and
     mirrors vanilla's per-parent-chain damage checks to avoid double counting.
+  - `On.ExtraDamageable.ApplyExtraDamageToHealthManager` handles Spore Shroom
+    and Defender's Crest extra-damage ticks, which bypass the standard damage
+    pipeline.
+  - Generic damage is attributed to player charms via a HeroController parent
+    check or known charm object names; `CountGenericDamage` opts into all
+    Generic damage as a fallback.
 - DPS is a rolling window (default 3 s): samples are `(Time.time, damage)`,
   old samples are pruned every frame, and
   `DPS = damage in window / window length`.
+- Multi-target mode: when `CountDamageToAllTargets` is false (default), hits
+  from the same source in the same frame are collapsed into one sample.
 - The HUD is created with `CanvasUtil`: a corner-anchored container holds two
   `Text` rows (`DPS x.xx`, smaller `Max x.xx`, both two decimals).
 - Peak DPS resets on the `ResetMaxKey` hotkey (default F7) or when returning
@@ -81,6 +89,8 @@ Ask the tester for these files when debugging.
 - v0.3.0 behavior was verified by the user: general DPS readings match
   expectations; hotkey toggle/reset and the pause-menu config screen are in
   use. Fix regressions before changing behavior.
+- v0.3.1 adds charm damage coverage and multi-target counting; it needs a user
+  play test before being treated as verified.
 
 ## Release workflow
 

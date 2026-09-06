@@ -12,8 +12,13 @@ build (v77).
 
 - Counts Nail, NailBeam, Spell and SharpShadow damage dealt to enemies.
 - Flukenest projectiles are counted through their own damage path.
-- Optional "Generic" attack-type damage (some charms/companions), opt-in via
-  settings because it can also cover non-player damage.
+- Player-charm damage is detected automatically: Grimmchild, Weaversong,
+  Dreamshield, Spore Shroom, Defender's Crest and their combinations, including
+  Spore/Dung extra-damage ticks.
+- Optional "Generic" attack-type damage for sources that can't be attributed
+  to the player.
+- Configurable multi-target behavior: count one enemy per attack (default) or
+  sum damage across every enemy hit by the same attack.
 - Rolling DPS window, displayed to two decimal places (default 3 s).
 - Peak DPS shown in a smaller second line, resettable with a hotkey.
 - Hotkeys to show/hide the HUD and to reset the peak.
@@ -66,6 +71,7 @@ Open **Pause → Mods → DPS Counter**:
 - Reset Max key.
 - Counting window (1 s / 2 s / 3 s / 5 s / 10 s).
 - Count Generic damage.
+- Multi-Target Damage (Single target / All targets).
 - HUD corner (Top-Right / Top-Left / Bottom-Right / Bottom-Left).
 
 ## Building from source
@@ -102,6 +108,7 @@ on macOS). Usable keys:
 - `ToggleKey` / `ResetMaxKey`
 - `WindowSeconds`
 - `CountGenericDamage`
+- `CountDamageToAllTargets`
 - `FontSize`
 - `HudAnchorX` / `HudAnchorY` / `HudOffsetX` / `HudOffsetY`
 

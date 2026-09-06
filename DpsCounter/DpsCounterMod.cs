@@ -31,11 +31,16 @@ namespace DpsCounterMod
         {
             "Top-Right", "Top-Left", "Bottom-Right", "Bottom-Left"
         };
+        private static readonly string[] MultiTargetOptions = { "Single target", "All targets" };
         private static FieldInfo _flukeDamageField;
 
         private readonly List<DamageSample> _samples = new List<DamageSample>();
+        private readonly Dictionary<GameObject, AttackGroup> _attackGroups =
+            new Dictionary<GameObject, AttackGroup>();
+        private readonly List<GameObject> _staleAttackGroups = new List<GameObject>();
         private long _totalDamage;
         private float _maxDps;
+        private int _lastExtraDamageFrame = -1;
 
         private GameObject _canvas;
         private Text _dpsText;
@@ -153,9 +158,19 @@ namespace DpsCounterMod
                 new IMenuMod.MenuEntry(
                     "Generic Damage",
                     OnOffValues,
-                    "Also count Generic-type damage (some charms/companions; may include non-player kills).",
+                    "Also count Generic damage that has no identifiable player source.",
                     index => Settings.CountGenericDamage = index == 1,
                     () => Settings.CountGenericDamage ? 1 : 0
+                )
+            );
+
+            entries.Add(
+                new IMenuMod.MenuEntry(
+                    "Multi-Target Damage",
+                    MultiTargetOptions,
+                    "Single target counts one enemy's damage per attack; All targets sums damage across every enemy hit.",
+                    index => Settings.CountDamageToAllTargets = index == 1,
+                    () => Settings.CountDamageToAllTargets ? 1 : 0
                 )
             );
 
@@ -181,6 +196,8 @@ namespace DpsCounterMod
             Unhook();
             DestroyHud();
             _samples.Clear();
+            _attackGroups.Clear();
+            _lastExtraDamageFrame = -1;
             _totalDamage = 0;
             _maxDps = 0f;
             Instance = null;
@@ -194,6 +211,7 @@ namespace DpsCounterMod
             }
 
             On.HealthManager.TakeDamage += OnTakeDamage;
+            On.ExtraDamageable.ApplyExtraDamageToHealthManager += OnExtraDamageApplied;
             On.SpellFluke.DoDamage += OnSpellFlukeDamage;
             ModHooks.HeroUpdateHook += OnHeroUpdate;
             ModHooks.SceneChanged += OnSceneChanged;
@@ -208,6 +226,7 @@ namespace DpsCounterMod
             }
 
             On.HealthManager.TakeDamage -= OnTakeDamage;
+            On.ExtraDamageable.ApplyExtraDamageToHealthManager -= OnExtraDamageApplied;
             On.SpellFluke.DoDamage -= OnSpellFlukeDamage;
             ModHooks.HeroUpdateHook -= OnHeroUpdate;
             ModHooks.SceneChanged -= OnSceneChanged;
@@ -275,7 +294,22 @@ namespace DpsCounterMod
                 return;
             }
 
-            RecordDamage(damage);
+            RecordDamage(damage, hitInstance.Source);
+        }
+
+        private void OnExtraDamageApplied(
+            On.ExtraDamageable.orig_ApplyExtraDamageToHealthManager orig,
+            ExtraDamageable self,
+            int damageAmount)
+        {
+            orig(self, damageAmount);
+
+            if (!Settings.Enabled || damageAmount <= 0)
+            {
+                return;
+            }
+
+            RecordExtraDamage(damageAmount);
         }
 
         private void OnSpellFlukeDamage(
@@ -338,7 +372,7 @@ namespace DpsCounterMod
 
             if (totalDamage > 0 && Settings.Enabled)
             {
-                RecordDamage(totalDamage);
+                RecordDamage(totalDamage, self.gameObject);
             }
         }
 
@@ -366,14 +400,80 @@ namespace DpsCounterMod
                     return true;
 
                 case AttackTypes.Generic:
-                    return Settings.CountGenericDamage;
+                    return Settings.CountGenericDamage || IsPlayerGenericSource(hit.Source);
 
                 default:
                     return false;
             }
         }
 
-        private void RecordDamage(int damage)
+        private static bool IsPlayerGenericSource(GameObject source)
+        {
+            if (source == null)
+            {
+                // Environment/cutscene kills that fabricate a huge Generic hit
+                // (e.g. EnemyKillEventListener) carry no source. Excluding them
+                // keeps a single fake kill from distorting the DPS.
+                return false;
+            }
+
+            // Generic damage that carries a real source object is player charm
+            // or companion damage in practice (Grimmchild, Weaversong,
+            // Dreamshield, Spore/Dung clouds, etc.).
+            return true;
+        }
+
+        private void RecordDamage(int damage, GameObject source)
+        {
+            if (!Settings.CountDamageToAllTargets && source != null)
+            {
+                AddGroupedDamageSample(source, damage);
+                return;
+            }
+
+            AddDamageSample(damage);
+        }
+
+        private void RecordExtraDamage(int damage)
+        {
+            if (!Settings.CountDamageToAllTargets)
+            {
+                int frame = Time.frameCount;
+                if (_lastExtraDamageFrame == frame)
+                {
+                    return;
+                }
+
+                _lastExtraDamageFrame = frame;
+            }
+
+            AddDamageSample(damage);
+        }
+
+        private void AddGroupedDamageSample(GameObject source, int damage)
+        {
+            int frame = Time.frameCount;
+
+            if (_attackGroups.TryGetValue(source, out AttackGroup group))
+            {
+                if (group.Frame == frame)
+                {
+                    // The same attack already added a sample this frame; in
+                    // Single-target mode additional enemies are not counted.
+                    return;
+                }
+
+                _attackGroups[source] = new AttackGroup(frame);
+            }
+            else
+            {
+                _attackGroups.Add(source, new AttackGroup(frame));
+            }
+
+            AddDamageSample(damage);
+        }
+
+        private void AddDamageSample(int damage)
         {
             _samples.Add(new DamageSample(Time.time, damage));
             _totalDamage += damage;
@@ -467,6 +567,8 @@ namespace DpsCounterMod
             if (targetScene == Constants.MENU_SCENE)
             {
                 _samples.Clear();
+                _attackGroups.Clear();
+                _lastExtraDamageFrame = -1;
                 _totalDamage = 0;
                 _maxDps = 0f;
                 DestroyHud();
@@ -572,6 +674,8 @@ namespace DpsCounterMod
 
         private void UpdateText()
         {
+            PruneAttackGroups();
+
             float now = Time.time;
             float window = Mathf.Max(Settings.WindowSeconds, 0.25f);
             float cutoff = now - window;
@@ -592,6 +696,25 @@ namespace DpsCounterMod
 
             _dpsText.text = $"DPS {dps:0.00}";
             _maxText.text = $"Max {_maxDps:0.00}";
+        }
+
+        private void PruneAttackGroups()
+        {
+            int cutoff = Time.frameCount - 2;
+            _staleAttackGroups.Clear();
+
+            foreach (KeyValuePair<GameObject, AttackGroup> pair in _attackGroups)
+            {
+                if (pair.Key == null || pair.Value.Frame < cutoff)
+                {
+                    _staleAttackGroups.Add(pair.Key);
+                }
+            }
+
+            for (int i = 0; i < _staleAttackGroups.Count; i++)
+            {
+                _attackGroups.Remove(_staleAttackGroups[i]);
+            }
         }
 
         private void DestroyHud()
@@ -616,6 +739,16 @@ namespace DpsCounterMod
             {
                 Time = time;
                 Damage = damage;
+            }
+        }
+
+        private struct AttackGroup
+        {
+            public readonly int Frame;
+
+            public AttackGroup(int frame)
+            {
+                Frame = frame;
             }
         }
     }

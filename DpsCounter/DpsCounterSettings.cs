@@ -10,6 +10,12 @@ namespace DpsCounterMod
         public bool Enabled { get; set; } = true;
 
         /// <summary>
+        /// When true, damage dealt to every enemy hit by one attack is added to
+        /// DPS. When false, only one enemy's damage is counted per attack.
+        /// </summary>
+        public bool CountDamageToAllTargets { get; set; } = false;
+
+        /// <summary>
         /// Key used to toggle the HUD while playing. Set to "None" to disable.
         /// Any UnityEngine.KeyCode name is accepted in the JSON file.
         /// </summary>
@@ -27,10 +33,10 @@ namespace DpsCounterMod
         public float WindowSeconds { get; set; } = 3f;
 
         /// <summary>
-        /// Whether to also count the "Generic" attack type. Nail, Spell, NailBeam
-        /// and SharpShadow damage is always counted. Some charm/companion damage
-        /// is delivered as Generic, but Generic also covers some non-player kills,
-        /// so it is opt-in.
+        /// Whether to count every "Generic"-type hit. Nail, Spell, NailBeam and
+        /// SharpShadow damage is always counted; Generic damage from player
+        /// charms is detected automatically. Enabling this also counts Generic
+        /// damage that could not be attributed to a player source.
         /// </summary>
         public bool CountGenericDamage { get; set; } = false;
 
