@@ -56,6 +56,7 @@ Open the pause menu -> Mods -> DPS Counter. Available options:
 - Counting window (1s / 2s / 3s / 5s / 10s).
 - Count Generic damage (some charms/companions).
 - Multi-Target Damage (Single target / All targets).
+- Debug Logging (logs every damage event to ModLog.txt).
 - HUD corner (Top-Right / Top-Left / Bottom-Right / Bottom-Left).
 
 ## Settings
@@ -70,6 +71,8 @@ game's saves. Edit it while the game is closed to change:
 - `CountGenericDamage` - also count Generic attack-type damage.
 - `CountDamageToAllTargets` - count every enemy hit by one attack (`true`) or
   only one enemy (`false`, default).
+- `DebugLogDamage` - log every observed damage event to ModLog.txt for
+  diagnosing missing damage sources.
 - `FontSize` - HUD text size.
 - `HudAnchorX` / `HudAnchorY` - screen anchor (0/0 bottom-left, 1/1 top-right).
 - `HudOffsetX` / `HudOffsetY` - pixel offset from the anchor.

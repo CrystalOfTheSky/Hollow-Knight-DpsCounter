@@ -176,6 +176,16 @@ namespace DpsCounterMod
 
             entries.Add(
                 new IMenuMod.MenuEntry(
+                    "Debug Logging",
+                    OnOffValues,
+                    "Log every damage event to ModLog.txt. Keep off during normal play.",
+                    index => Settings.DebugLogDamage = index == 1,
+                    () => Settings.DebugLogDamage ? 1 : 0
+                )
+            );
+
+            entries.Add(
+                new IMenuMod.MenuEntry(
                     "HUD Corner",
                     HudCornerOptions,
                     "Which screen corner the DPS counter is attached to.",
@@ -211,6 +221,7 @@ namespace DpsCounterMod
             }
 
             On.HealthManager.TakeDamage += OnTakeDamage;
+            On.HealthManager.Hit += OnHealthManagerHit;
             On.ExtraDamageable.ApplyExtraDamageToHealthManager += OnExtraDamageApplied;
             On.SpellFluke.DoDamage += OnSpellFlukeDamage;
             ModHooks.HeroUpdateHook += OnHeroUpdate;
@@ -226,6 +237,7 @@ namespace DpsCounterMod
             }
 
             On.HealthManager.TakeDamage -= OnTakeDamage;
+            On.HealthManager.Hit -= OnHealthManagerHit;
             On.ExtraDamageable.ApplyExtraDamageToHealthManager -= OnExtraDamageApplied;
             On.SpellFluke.DoDamage -= OnSpellFlukeDamage;
             ModHooks.HeroUpdateHook -= OnHeroUpdate;
@@ -279,17 +291,45 @@ namespace DpsCounterMod
             }
         }
 
-        private void OnTakeDamage(On.HealthManager.orig_TakeDamage orig, HealthManager self, HitInstance hitInstance)
+        private void OnHealthManagerHit(
+            On.HealthManager.orig_Hit orig,
+            HealthManager self,
+            HitInstance hitInstance)
         {
-            orig(self, hitInstance);
-
-            if (!Settings.Enabled || hitInstance.DamageDealt <= 0 || !IsPlayerDamage(hitInstance))
+            if (Settings.DebugLogDamage)
             {
-                return;
+                Log(
+                    $"[DPS debug] HealthManager.Hit target={self.name} type={hitInstance.AttackType} " +
+                    $"dmg={hitInstance.DamageDealt} mult={hitInstance.Multiplier} " +
+                    $"source={DescribeGameObject(hitInstance.Source)}"
+                );
             }
 
+            orig(self, hitInstance);
+        }
+
+        private void OnTakeDamage(On.HealthManager.orig_TakeDamage orig, HealthManager self, HitInstance hitInstance)
+        {
+            if (Settings.DebugLogDamage)
+            {
+                Log(
+                    $"[DPS debug] HealthManager.TakeDamage target={self.name} type={hitInstance.AttackType} " +
+                    $"dmg={hitInstance.DamageDealt} mult={hitInstance.Multiplier} " +
+                    $"source={DescribeGameObject(hitInstance.Source)}"
+                );
+            }
+
+            // Decide whether to count *before* calling the original method:
+            // charm attacks (Grimmchild fireballs, Weaverling hitboxes,
+            // Dreamshield hitboxes) often destroy their source object as part
+            // of applying the hit, so checking afterwards can no longer
+            // attribute the damage to the player.
+            bool shouldRecord = hitInstance.DamageDealt > 0 && IsPlayerDamage(hitInstance);
             int damage = Mathf.RoundToInt(hitInstance.DamageDealt * Mathf.Max(hitInstance.Multiplier, 0f));
-            if (damage <= 0)
+
+            orig(self, hitInstance);
+
+            if (!shouldRecord || damage <= 0 || !Settings.Enabled)
             {
                 return;
             }
@@ -302,6 +342,11 @@ namespace DpsCounterMod
             ExtraDamageable self,
             int damageAmount)
         {
+            if (Settings.DebugLogDamage)
+            {
+                Log($"[DPS debug] Extra damage amount={damageAmount} target={self.name}");
+            }
+
             orig(self, damageAmount);
 
             if (!Settings.Enabled || damageAmount <= 0)
@@ -421,6 +466,17 @@ namespace DpsCounterMod
             // or companion damage in practice (Grimmchild, Weaversong,
             // Dreamshield, Spore/Dung clouds, etc.).
             return true;
+        }
+
+        private static string DescribeGameObject(GameObject gameObject)
+        {
+            if (gameObject == null)
+            {
+                return "null";
+            }
+
+            Transform root = gameObject.transform.root;
+            return root != null ? $"{gameObject.name} [root={root.name}]" : gameObject.name;
         }
 
         private void RecordDamage(int damage, GameObject source)

@@ -9,7 +9,7 @@ A Hollow Knight mod that shows the player's rolling damage per second on screen,
 plus a peak-DPS line. Source of truth lives in this Git repo and on GitHub:
 
 - GitHub: `CrystalOfTheSky/Hollow-Knight-DpsCounter`
-- Current released version: `v0.3.1`
+- Current released version: `v0.3.2`
 
 ## Compatibility (important)
 
@@ -90,7 +90,10 @@ Ask the tester for these files when debugging.
   expectations; hotkey toggle/reset and the pause-menu config screen are in
   use. Fix regressions before changing behavior.
 - v0.3.1 adds charm damage coverage and multi-target counting; it needs a user
-  play test before being treated as verified.
+  play test before being treated as verified. User testing reported that
+  Spore Shroom/Defender's Crest now count, while Grimmchild, Weaversong and
+  Dreamshield still do not; v0.3.2 attributes Generic hits before the source
+  object can be destroyed and adds `DebugLogDamage` diagnostics.
 
 ## Release workflow
 

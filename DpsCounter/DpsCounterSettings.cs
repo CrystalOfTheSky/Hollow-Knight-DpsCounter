@@ -40,6 +40,13 @@ namespace DpsCounterMod
         /// </summary>
         public bool CountGenericDamage { get; set; } = false;
 
+        /// <summary>
+        /// When true, logs every damage event observed by the mod (target,
+        /// attack type, source object) to ModLog.txt. Used for diagnosing
+        /// damage sources; keep it off during normal play.
+        /// </summary>
+        public bool DebugLogDamage { get; set; } = false;
+
         /// <summary>Font size of the HUD text.</summary>
         public int FontSize { get; set; } = 26;
 
