@@ -357,7 +357,31 @@ namespace DpsCounterMod
                 );
             }
 
+            // Dreamshield and Weaversong (and possibly Grimmchild) deal damage
+            // by running a SetHP FSM action that directly overwrites the
+            // enemy's HealthManager.hp. The amount dealt is the difference
+            // between the health before and the value the action writes.
+            GameObject damageTarget = self.target == null ? null : self.target.GetSafe(self);
+            HealthManager health = damageTarget == null
+                ? null
+                : damageTarget.GetComponent<HealthManager>();
+
+            bool isPlayerCharmHit = health != null && IsCharmSetHpOwner(self);
+            int healthBefore = isPlayerCharmHit ? health.hp : 0;
+
             orig(self);
+
+            if (!isPlayerCharmHit || !Settings.Enabled)
+            {
+                return;
+            }
+
+            int healthAfter = health == null ? healthBefore : health.hp;
+            int damage = healthBefore - healthAfter;
+            if (damage > 0)
+            {
+                RecordDamage(damage, self.Fsm == null ? null : self.Fsm.GameObject);
+            }
         }
 
         private void OnFsmTakeDamage(
@@ -555,6 +579,29 @@ namespace DpsCounterMod
             }
 
             return $"{action.Fsm.Name} on {action.Fsm.GameObject.name}";
+        }
+
+        private static bool IsCharmSetHpOwner(SetHP self)
+        {
+            if (self == null || self.Fsm == null || self.Fsm.GameObject == null)
+            {
+                return false;
+            }
+
+            Transform root = self.Fsm.GameObject.transform.root;
+            string rootName = root != null ? root.name : self.Fsm.GameObject.name;
+            string actionName = self.Fsm.GameObject.name;
+
+            return ContainsToken(actionName) || ContainsToken(rootName);
+
+            bool ContainsToken(string value)
+            {
+                return value.IndexOf("Grimmchild", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                       value.IndexOf("Weaverling", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                       value.IndexOf("Shield", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                       value.IndexOf("Enemy Damager", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                       value.IndexOf("Fireball", StringComparison.OrdinalIgnoreCase) >= 0;
+            }
         }
 
         private void RecordDamage(int damage, GameObject source)
