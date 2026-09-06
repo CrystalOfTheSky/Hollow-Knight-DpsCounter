@@ -1,5 +1,7 @@
 # Hollow Knight – DPS Counter
 
+*：The entire project is done by vibe coding (DeepSeek-v4-Flash).
+
 A Hollow Knight mod that reads the damage the player deals to enemies and shows
 a rolling damage-per-second value on screen, with a peak-DPS line underneath.
 
