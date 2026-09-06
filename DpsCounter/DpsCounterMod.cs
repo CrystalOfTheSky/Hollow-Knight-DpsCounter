@@ -222,6 +222,10 @@ namespace DpsCounterMod
 
             On.HealthManager.TakeDamage += OnTakeDamage;
             On.HealthManager.Hit += OnHealthManagerHit;
+            On.DamageEnemies.DoDamage += OnDamageEnemiesDoDamage;
+            On.SubtractHP.OnEnter += OnSubtractHp;
+            On.SetHP.OnEnter += OnSetHp;
+            On.HutongGames.PlayMaker.Actions.TakeDamage.OnEnter += OnFsmTakeDamage;
             On.ExtraDamageable.ApplyExtraDamageToHealthManager += OnExtraDamageApplied;
             On.SpellFluke.DoDamage += OnSpellFlukeDamage;
             ModHooks.HeroUpdateHook += OnHeroUpdate;
@@ -238,6 +242,10 @@ namespace DpsCounterMod
 
             On.HealthManager.TakeDamage -= OnTakeDamage;
             On.HealthManager.Hit -= OnHealthManagerHit;
+            On.DamageEnemies.DoDamage -= OnDamageEnemiesDoDamage;
+            On.SubtractHP.OnEnter -= OnSubtractHp;
+            On.SetHP.OnEnter -= OnSetHp;
+            On.HutongGames.PlayMaker.Actions.TakeDamage.OnEnter -= OnFsmTakeDamage;
             On.ExtraDamageable.ApplyExtraDamageToHealthManager -= OnExtraDamageApplied;
             On.SpellFluke.DoDamage -= OnSpellFlukeDamage;
             ModHooks.HeroUpdateHook -= OnHeroUpdate;
@@ -306,6 +314,66 @@ namespace DpsCounterMod
             }
 
             orig(self, hitInstance);
+        }
+
+        private void OnDamageEnemiesDoDamage(
+            On.DamageEnemies.orig_DoDamage orig,
+            DamageEnemies self,
+            GameObject target)
+        {
+            if (Settings.DebugLogDamage)
+            {
+                Log(
+                    $"[DPS debug] DamageEnemies.DoDamage source={self.gameObject.name} " +
+                    $"type={self.attackType} dmg={self.damageDealt} target={DescribeGameObject(target)}"
+                );
+            }
+
+            orig(self, target);
+        }
+
+        private void OnSubtractHp(On.SubtractHP.orig_OnEnter orig, SubtractHP self)
+        {
+            if (Settings.DebugLogDamage)
+            {
+                GameObject target = self.target == null ? null : self.target.GetSafe(self);
+                Log(
+                    $"[DPS debug] SubtractHP owner={DescribeFsmOwner(self)} amount={self.amount.Value} " +
+                    $"target={DescribeGameObject(target)}"
+                );
+            }
+
+            orig(self);
+        }
+
+        private void OnSetHp(On.SetHP.orig_OnEnter orig, SetHP self)
+        {
+            if (Settings.DebugLogDamage)
+            {
+                GameObject target = self.target == null ? null : self.target.GetSafe(self);
+                Log(
+                    $"[DPS debug] SetHP owner={DescribeFsmOwner(self)} hp={self.hp.Value} " +
+                    $"target={DescribeGameObject(target)}"
+                );
+            }
+
+            orig(self);
+        }
+
+        private void OnFsmTakeDamage(
+            On.HutongGames.PlayMaker.Actions.TakeDamage.orig_OnEnter orig,
+            HutongGames.PlayMaker.Actions.TakeDamage self)
+        {
+            if (Settings.DebugLogDamage)
+            {
+                Log(
+                    $"[DPS debug] Fsm TakeDamage owner={DescribeFsmOwner(self)} " +
+                    $"target={DescribeGameObject(self.Target == null ? null : self.Target.Value)} " +
+                    $"type={(AttackTypes)self.AttackType.Value} dmg={self.DamageDealt.Value}"
+                );
+            }
+
+            orig(self);
         }
 
         private void OnTakeDamage(On.HealthManager.orig_TakeDamage orig, HealthManager self, HitInstance hitInstance)
@@ -477,6 +545,16 @@ namespace DpsCounterMod
 
             Transform root = gameObject.transform.root;
             return root != null ? $"{gameObject.name} [root={root.name}]" : gameObject.name;
+        }
+
+        private static string DescribeFsmOwner(HutongGames.PlayMaker.FsmStateAction action)
+        {
+            if (action == null || action.Fsm == null || action.Fsm.GameObject == null)
+            {
+                return "unknown";
+            }
+
+            return $"{action.Fsm.Name} on {action.Fsm.GameObject.name}";
         }
 
         private void RecordDamage(int damage, GameObject source)

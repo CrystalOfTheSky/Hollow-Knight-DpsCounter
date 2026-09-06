@@ -66,5 +66,9 @@
       <HintPath>$(HollowKnightManaged)/UnityEngine.UI.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="PlayMaker">
+      <HintPath>$(HollowKnightManaged)/PlayMaker.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
   </ItemGroup>
 </Project>
